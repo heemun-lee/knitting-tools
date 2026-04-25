@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {usePatternState} from '../hooks/usePatternState';
 import {PatternControls} from '../components/pattern/PatternControls';
 import {PatternToolbar} from '../components/pattern/PatternToolbar';
@@ -6,6 +7,7 @@ import {PatternModals} from '../components/pattern/PatternModals';
 import {IconBookmark, IconSave, IconPattern} from '../components/icons';
 
 const PatternTool = () => {
+    const { t } = useTranslation();
     const state = usePatternState();
 
     return (
@@ -14,16 +16,16 @@ const PatternTool = () => {
                  style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24}}>
                 <div>
                     <div className="page-eyebrow">Tool 03</div>
-                    <h1 className="page-title">사진 → 도안 변환</h1>
-                    <p className="page-subtitle">사진을 픽셀 도안으로 변환하고, 색상 편집 · 측정 · 영역 복사 등을 자유롭게.</p>
+                    <h1 className="page-title">{t('pattern_tool.title')}</h1>
+                    <p className="page-subtitle">{t('pattern_tool.subtitle')}</p>
                 </div>
                 <div style={{display: 'flex', gap: 10}}>
                     <button className="btn btn-ghost btn-sm" onClick={() => state.setShowSaved(true)}>
-                        <IconBookmark size={14} stroke={2}/> 불러오기 ({state.saved.length})
+                        <IconBookmark size={14} stroke={2}/> {t('pattern_tool.load', { count: state.saved.length })}
                     </button>
                     {state.grid && (
                         <button className="btn btn-secondary btn-sm" onClick={state.openSaveAs}>
-                            <IconSave size={14} stroke={2}/> 저장
+                            <IconSave size={14} stroke={2}/> {t('pattern_tool.save')}
                         </button>
                     )}
                 </div>
@@ -54,12 +56,10 @@ const PatternTool = () => {
                                     <IconPattern size={56} stroke={1.2}/>
                                 </div>
                                 <div
-                                    style={{fontSize: 16, color: 'var(--ink-700)', fontWeight: 500, marginBottom: 6}}>아직
-                                    도안이 없어요
+                                    style={{fontSize: 16, color: 'var(--ink-700)', fontWeight: 500, marginBottom: 6}}>{t('pattern_tool.no_pattern')}
                                 </div>
                                 <div style={{fontSize: 13, color: 'var(--ink-500)', maxWidth: 320, lineHeight: 1.6}}>
-                                    왼쪽에서 사진을 업로드하고 코수를 정한 뒤 <strong style={{color: 'var(--pink-600)'}}>도안으로 변환</strong>을
-                                    눌러주세요.
+                                    {t('pattern_tool.no_pattern_desc1')}<strong style={{color: 'var(--pink-600)'}}>{t('pattern_tool.no_pattern_desc2')}</strong>{t('pattern_tool.no_pattern_desc3')}
                                 </div>
                             </div>
                         </div>

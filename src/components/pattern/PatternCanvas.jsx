@@ -1,8 +1,10 @@
 import {useEffect} from 'react';
 import {PX_W, PX_H} from '../../utils/colors';
+import { useTranslation } from 'react-i18next';
 import {IconCheck, IconMinus, IconPlus, IconReset} from '../icons';
 
 export const PatternCanvas = ({state}) => {
+    const { t } = useTranslation();
     const {
         grid, palette, pixelScale, fullscreen,
         trackerOn, trackerRow, setTrackerRow,
@@ -144,7 +146,7 @@ export const PatternCanvas = ({state}) => {
             drawDot(x2, y2);
             const dCols = Math.abs(m.c2 - m.c1) + 1;
             const dRows = Math.abs(m.r2 - m.r1) + 1;
-            const label = m.r1 === m.r2 ? `${dCols}코` : `${dRows}단`;
+            const label = m.r1 === m.r2 ? `${dCols}${t('pattern_canvas.unit_stitches')}` : `${dRows}${t('pattern_canvas.unit_rows')}`;
             ctx.font = '11px Pretendard, system-ui, sans-serif';
             const tw = ctx.measureText(label).width + 12;
             const tx = (x1 + x2) / 2 - tw / 2;
@@ -194,18 +196,18 @@ export const PatternCanvas = ({state}) => {
         <>
             {floating && (
                 <div className="tracker-strip" style={{background: 'linear-gradient(90deg, #FFF5F9, #FFEDF4)'}}>
-                    <span className="chip" style={{background: 'var(--pink-500)', color: 'white'}}>이동 중</span>
+                    <span className="chip" style={{background: 'var(--pink-500)', color: 'white'}}>{t('pattern_canvas.moving')}</span>
                     <div className="tracker-text" style={{flex: 1}}>
-                        선택 영역을 드래그해서 이동하세요. 다른 곳을 클릭하면 적용됩니다.
+                        {t('pattern_canvas.moving_desc')}
                     </div>
                     <button className="btn btn-secondary btn-sm" onClick={commitFloating}>
-                        <IconCheck size={13} stroke={2.4}/> 적용
+                        <IconCheck size={13} stroke={2.4}/> {t('pattern_canvas.apply')}
                     </button>
                     <button className="btn btn-ghost btn-sm" onClick={() => {
                         setFloating(null);
                         undo();
                     }}>
-                        취소
+                        {t('pattern_canvas.cancel')}
                     </button>
                 </div>
             )}
@@ -217,7 +219,7 @@ export const PatternCanvas = ({state}) => {
                         <IconMinus size={14} stroke={2.4}/>
                     </button>
                     <div className="tracker-text">
-                        현재 <strong style={{color: 'var(--pink-600)'}}>{trackerRow + 1}단</strong> / {grid.length}단
+                        {t('pattern_canvas.current')}<strong style={{color: 'var(--pink-600)'}}>{trackerRow + 1}{t('pattern_canvas.unit_rows')}</strong>{t('pattern_canvas.total', {total: grid.length})}
                     </div>
                     <div className="tracker-progress">
                         <div className="tracker-progress-fill"

@@ -1,10 +1,12 @@
 import {useMemo} from 'react';
 import {IconSparkle} from '../components/icons';
 import {useToast} from '../hooks/useToast';
+import { useTranslation } from 'react-i18next';
 import {useLocal} from '../hooks/useLocal';
 import {Stepper} from '../components/ui/Stepper';
 
 const ShapeCalc = () => {
+    const { t } = useTranslation();
     const toast = useToast();
     const [startStitches, setStartStitches] = useLocal('kt.shape.start', 80);
     const [endStitches, setEndStitches] = useLocal('kt.shape.end', 60);
@@ -52,52 +54,51 @@ const ShapeCalc = () => {
         <div className="page">
             <div className="page-head">
                 <div className="page-eyebrow">Tool 02</div>
-                <h1 className="page-title">줄임 · 늘림 분배기</h1>
-                <p className="page-subtitle">시작 코수와 마지막 코수, 그리고 작업할 단수를 입력하면 균등하게 분배된 작업 가이드를 만들어드려요.</p>
+                <h1 className="page-title">{t('shape_calc.title')}</h1>
+                <p className="page-subtitle">{t('shape_calc.subtitle')}</p>
             </div>
 
             <div className="two-col">
                 <div className="card">
                     <div className="card-head">
                         <div>
-                            <h2 className="card-title">조건 입력</h2>
-                            <p className="card-help">소매·진동 등 점진적인 코수 변화에 사용하세요.</p>
+                            <h2 className="card-title">{t('shape_calc.input_cond')}</h2>
+                            <p className="card-help">{t('shape_calc.input_cond_help')}</p>
                         </div>
                     </div>
 
                     <div style={{display: 'flex', flexDirection: 'column', gap: 18}}>
                         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14}}>
                             <div className="field">
-                                <label className="field-label">시작 코수</label>
+                                <label className="field-label">{t('shape_calc.start_stitches')}</label>
                                 <Stepper value={startStitches} onChange={setStartStitches} min={1} max={500}
-                                         suffix="코"/>
+                                         suffix={t('shape_calc.unit_stitches')}/>
                             </div>
                             <div className="field">
-                                <label className="field-label">마지막 코수</label>
-                                <Stepper value={endStitches} onChange={setEndStitches} min={1} max={500} suffix="코"/>
+                                <label className="field-label">{t('shape_calc.end_stitches')}</label>
+                                <Stepper value={endStitches} onChange={setEndStitches} min={1} max={500} suffix={t('shape_calc.unit_stitches')}/>
                             </div>
                         </div>
 
                         <div className="field">
-                            <label className="field-label">작업할 단수 <span className="field-hint">시작에서 끝까지</span></label>
-                            <Stepper value={totalRows} onChange={setTotalRows} min={1} max={500} suffix="단"/>
+                            <label className="field-label">{t('shape_calc.work_rows')} <span className="field-hint">{t('shape_calc.work_rows_hint')}</span></label>
+                            <Stepper value={totalRows} onChange={setTotalRows} min={1} max={500} suffix={t('shape_calc.unit_rows')}/>
                         </div>
 
                         <div className="field">
-                            <label className="field-label">한 번에 변화하는 코수 <span
-                                className="field-hint">양 옆 합계</span></label>
-                            <Stepper value={stitchesPerStep} onChange={setStitchesPerStep} min={1} max={20} suffix="코"/>
+                            <label className="field-label">{t('shape_calc.stitches_per_step')} <span className="field-hint">{t('shape_calc.stitches_per_step_hint')}</span></label>
+                            <Stepper value={stitchesPerStep} onChange={setStitchesPerStep} min={1} max={20} suffix={t('shape_calc.unit_stitches')}/>
                         </div>
 
                         <div className="formula-box">
                             {diff === 0 ? (
-                                <div>시작과 끝 코수가 같아요. 변화가 필요하지 않아요.</div>
+                                <div>{t('shape_calc.no_change')}</div>
                             ) : (
                                 <div>
-                                    총 <strong>{absDiff}코</strong>를 {isDecrease ? '줄여야' : '늘려야'} 해요.
-                                    &nbsp;한 번에 {stitchesPerStep}코씩 → <strong>{numSteps}회</strong>
+                                    {t('shape_calc.total')}<strong>{absDiff}{t('shape_calc.unit_stitches')}</strong>{isDecrease ? t('shape_calc.decrease') : t('shape_calc.increase')}{t('shape_calc.do')}
+                                    &nbsp;{t('shape_calc.step_each', {stitches: stitchesPerStep})}<strong>{numSteps}{t('shape_calc.times')}</strong>
                                     {remainder > 0 &&
-                                        <span style={{color: 'var(--ink-500)'}}> · {remainder}코 나머지</span>}
+                                        <span style={{color: 'var(--ink-500)'}}>{t('shape_calc.remainder', {remainder})}</span>}
                                 </div>
                             )}
                         </div>
@@ -107,16 +108,16 @@ const ShapeCalc = () => {
                 <div className="card">
                     <div className="card-head">
                         <div>
-                            <h2 className="card-title">{isDecrease ? '줄임' : '늘림'} 분배 가이드</h2>
-                            <p className="card-help">아래 순서대로 작업하시면 균등하게 분배됩니다.</p>
+                            <h2 className="card-title">{isDecrease ? t('shape_calc.guide_dec') : t('shape_calc.guide_inc')}</h2>
+                            <p className="card-help">{t('shape_calc.guide_help')}</p>
                         </div>
-                        <span className="chip">{isDecrease ? '⌄ 줄임' : '⌃ 늘림'}</span>
+                        <span className="chip">{isDecrease ? t('shape_calc.chip_dec') : t('shape_calc.chip_inc')}</span>
                     </div>
 
                     {grouped.length === 0 ? (
                         <div className="empty">
                             <div className="empty-icon"><IconSparkle size={28}/></div>
-                            조건을 입력하면 분배 가이드가 나타나요
+                            {t('shape_calc.empty_guide')}
                         </div>
                     ) : (
                         <>
@@ -136,11 +137,11 @@ const ShapeCalc = () => {
                                             fontWeight: 700, fontSize: 13, fontFamily: 'var(--font-display)'
                                         }}>{i + 1}</div>
                                         <div style={{flex: 1, fontSize: 14, color: 'var(--ink-900)'}}>
-                                            <strong>{g.interval}단마다</strong> {stitchesPerStep}코 {isDecrease ? '줄임' : '늘림'}
-                                            <span style={{color: 'var(--ink-500)'}}> × {g.count}회</span>
+                                            <strong>{t('shape_calc.every_rows', {interval: g.interval})}</strong> {isDecrease ? t('shape_calc.step_dec', {stitches: stitchesPerStep}) : t('shape_calc.step_inc', {stitches: stitchesPerStep})}
+                                            <span style={{color: 'var(--ink-500)'}}>{t('shape_calc.times_count', {count: g.count})}</span>
                                         </div>
                                         <div style={{fontSize: 12, color: 'var(--ink-500)'}}>
-                                            총 {g.interval * g.count}단
+                                            {t('shape_calc.total_rows', {rows: g.interval * g.count})}
                                         </div>
                                     </div>
                                 ))}
@@ -155,7 +156,7 @@ const ShapeCalc = () => {
                                     textTransform: 'uppercase',
                                     marginBottom: 10
                                 }}>
-                                    단별 상세
+                                    {t('shape_calc.row_details')}
                                 </div>
                                 <div style={{
                                     maxHeight: 240,
@@ -171,13 +172,13 @@ const ShapeCalc = () => {
                                         return (
                                             <div key={i} className="dist-row"
                                                  style={{borderBottom: 'none', padding: '6px 0'}}>
-                                                <div className="row-label">{s.idx}회차</div>
+                                                <div className="row-label">{t('shape_calc.round_idx', {idx: s.idx})}</div>
                                                 <div style={{fontSize: 13}}>
-                                                    <strong>{s.atRow}단</strong>에서 {stitchesPerStep}코 {isDecrease ? '줄임' : '늘림'}
+                                                    <strong>{t('shape_calc.at_row', {row: s.atRow})}</strong>{t('shape_calc.from_at_row')} {isDecrease ? t('shape_calc.step_dec', {stitches: stitchesPerStep}) : t('shape_calc.step_inc', {stitches: stitchesPerStep})}
                                                 </div>
                                                 <div className="row-value"
                                                      style={{fontSize: 12, color: 'var(--ink-500)', fontWeight: 500}}>
-                                                    → {remaining}코
+                                                    {t('shape_calc.to_stitches', {remaining})}
                                                 </div>
                                             </div>
                                         );

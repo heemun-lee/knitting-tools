@@ -1,8 +1,10 @@
 import {IconUpload, IconSparkle, IconMerge, IconTrash} from '../icons';
+import { useTranslation } from 'react-i18next';
 import {NumberField} from '../ui/NumberField';
 import {luma} from '../../utils/colors';
 
 export const PatternControls = ({state}) => {
+    const { t } = useTranslation();
     const {
         fileRef, onFile, imgUrl, imgEl,
         stitchCount, setStitchCount,
@@ -21,38 +23,38 @@ export const PatternControls = ({state}) => {
         <div className="pattern-controls">
             <div className="card" style={{padding: 18}}>
                 <div className="card-head" style={{marginBottom: 12}}>
-                    <h2 className="card-title" style={{fontSize: 15}}>사진 업로드</h2>
+                    <h2 className="card-title" style={{fontSize: 15}}>{t('pattern_controls.photo_upload')}</h2>
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{display: 'none'}}/>
                 <div className={`upload-zone ${imgUrl ? 'has-image' : ''}`} onClick={() => fileRef.current.click()}>
                     {imgUrl ? (
-                        <img src={imgUrl} className="upload-preview" alt="원본"/>
+                        <img src={imgUrl} className="upload-preview" alt="Original"/>
                     ) : (
                         <>
                             <div className="upload-icon"><IconUpload size={28} stroke={1.6}/></div>
-                            <div className="upload-text">사진 선택하기</div>
-                            <div className="upload-sub">JPG, PNG · 클릭하여 선택</div>
+                            <div className="upload-text">{t('pattern_controls.select_photo')}</div>
+                            <div className="upload-sub">{t('pattern_controls.photo_format')}</div>
                         </>
                     )}
                 </div>
 
                 <div style={{display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16}}>
                     <div className="field">
-                        <label className="field-label">코수 (가로)</label>
-                        <NumberField value={stitchCount} onChange={setStitchCount} suffix="코" min={4} max={400}/>
+                        <label className="field-label">{t('pattern_controls.stitch_count_w')}</label>
+                        <NumberField value={stitchCount} onChange={setStitchCount} suffix={t('pattern_controls.unit_stitches')} min={4} max={400}/>
                         {imgEl && (
                             <div className="field-hint" style={{marginTop: 4}}>
-                                단수는 자동으로 <strong style={{color: 'var(--pink-600)'}}>{rowCount}단</strong>으로 계산됐어요
+                                {t('pattern_controls.rows_auto_calc')}<strong style={{color: 'var(--pink-600)'}}>{rowCount}{t('pattern_controls.rows_auto_calc2')}</strong>{t('pattern_controls.rows_auto_calc3')}
                             </div>
                         )}
                     </div>
                     <div className="field">
-                        <label className="field-label">사용할 색상 수 <span className="field-hint">최대 20</span></label>
-                        <NumberField value={colorCount} onChange={setColorCount} suffix="색" min={2} max={20}/>
+                        <label className="field-label">{t('pattern_controls.color_count')} <span className="field-hint">{t('pattern_controls.color_count_hint')}</span></label>
+                        <NumberField value={colorCount} onChange={setColorCount} suffix={t('pattern_controls.unit_colors')} min={2} max={20}/>
                     </div>
 
                     <button className="btn btn-primary" onClick={convert} disabled={busy || !imgEl}>
-                        {busy ? '변환 중...' : <><IconSparkle size={16} stroke={2}/> 도안으로 변환</>}
+                        {busy ? t('pattern_controls.converting') : <><IconSparkle size={16} stroke={2}/> {t('pattern_controls.convert_btn')}</>}
                     </button>
                 </div>
             </div>
@@ -61,9 +63,9 @@ export const PatternControls = ({state}) => {
                 <div className="card" style={{padding: 18}}>
                     <div className="card-head" style={{marginBottom: 12}}>
                         <h2 className="card-title" style={{fontSize: 15}}>
-                            색상 팔레트
+                            {t('pattern_controls.palette')}
                             {mergeMode &&
-                                <span style={{color: 'var(--pink-500)', fontSize: 12, fontWeight: 500, marginLeft: 8}}>· 합칠 색을 선택</span>}
+                                <span style={{color: 'var(--pink-500)', fontSize: 12, fontWeight: 500, marginLeft: 8}}>{t('pattern_controls.select_color_merge')}</span>}
                         </h2>
                         <button
                             className={`tool-btn ${mergeMode ? 'active' : ''}`}
@@ -71,7 +73,7 @@ export const PatternControls = ({state}) => {
                                 setMergeMode(m => !m);
                                 setMergeFrom(null);
                             }}>
-                            <IconMerge size={14}/> 합치기
+                            <IconMerge size={14}/> {t('pattern_controls.merge')}
                         </button>
                     </div>
                     <div className="palette-list">
@@ -84,7 +86,7 @@ export const PatternControls = ({state}) => {
                                          if (mergeMode) {
                                              if (mergeFrom === null) {
                                                  setMergeFrom(i);
-                                                 toast('합칠 대상 색을 선택하세요');
+                                                 toast(t('pattern_controls.msg_select_merge'));
                                              } else if (mergeFrom !== i) {
                                                  mergePalette(mergeFrom, i);
                                                  setMergeFrom(null);
@@ -104,10 +106,10 @@ export const PatternControls = ({state}) => {
                                         fontSize: 12,
                                         color: 'var(--ink-700)',
                                         fontWeight: 500
-                                    }}>색상 {i + 1}</div>
+                                    }}>{t('pattern_controls.color')} {i + 1}</div>
                                     <div className="phex">{p.hex}</div>
                                 </div>
-                                <span className="pcount">{p.count}코</span>
+                                <span className="pcount">{p.count}{t('pattern_controls.unit_stitches')}</span>
                             </div>
                         ))}
                     </div>
@@ -117,7 +119,7 @@ export const PatternControls = ({state}) => {
                                     setMergeMode(false);
                                     setMergeFrom(null);
                                 }}>
-                            취소
+                            {t('pattern_controls.cancel')}
                         </button>
                     )}
                 </div>
@@ -126,13 +128,13 @@ export const PatternControls = ({state}) => {
             {grid && measurements.length > 0 && (
                 <div className="card" style={{padding: 18}}>
                     <div className="card-head" style={{marginBottom: 12}}>
-                        <h2 className="card-title" style={{fontSize: 15}}>측정 ({measurements.length})</h2>
+                        <h2 className="card-title" style={{fontSize: 15}}>{t('pattern_controls.measurements', {count: measurements.length})}</h2>
                         <button className="tool-btn" onClick={() => {
                             setMeasurements([]);
                             setSelectedMeasure(null);
-                            toast('측정 모두 삭제');
+                            toast(t('pattern_controls.msg_measure_del'));
                         }}>
-                            <IconTrash size={13}/> 모두
+                            <IconTrash size={13}/> {t('pattern_controls.all')}
                         </button>
                     </div>
                     <div style={{display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto'}}>
@@ -163,9 +165,9 @@ export const PatternControls = ({state}) => {
                                         fontWeight: 700
                                     }}>{i + 1}</div>
                                     <div style={{flex: 1, fontSize: 13}}>
-                                        <strong>{isHoriz ? `${dCols}코` : `${dRows}단`}</strong>
+                                        <strong>{isHoriz ? `${dCols}${t('pattern_controls.unit_stitches')}` : `${dRows}${t('pattern_controls.unit_rows')}`}</strong>
                                         <span style={{color: 'var(--ink-500)', marginLeft: 6, fontSize: 11}}>
-                      {isHoriz ? '가로' : '세로'}
+                      {isHoriz ? t('pattern_controls.horiz') : t('pattern_controls.vert')}
                     </span>
                                     </div>
                                     <button className="picon-btn"

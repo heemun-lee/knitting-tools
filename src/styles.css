@@ -101,10 +101,10 @@ input, select, textarea {
 
 /* ---------- App shell ---------- */
 .app {
-    display: grid;
-    grid-template-columns: 256px 1fr;
+    display: flex;
     height: 100vh;
     background: var(--bg);
+    overflow: hidden;
 }
 
 /* Sidebar */
@@ -115,6 +115,18 @@ input, select, textarea {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 256px;
+    flex-shrink: 0;
+    transition: width 0.3s var(--ease), padding 0.3s var(--ease);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.app.sidebar-closed .sidebar {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-right: none;
 }
 
 .brand {
@@ -122,22 +134,12 @@ input, select, textarea {
     align-items: center;
     gap: 12px;
     padding: 4px 6px 28px;
+    position: relative;
 }
 
 .brand > div {
     min-width: 0;
     flex: 1;
-}
-
-.brand-mark {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: var(--pink-500);
-    display: grid;
-    place-items: center;
-    color: white;
-    box-shadow: 0 6px 16px rgba(236, 107, 156, 0.3);
 }
 
 .brand-name {
@@ -229,6 +231,54 @@ input, select, textarea {
     overflow-y: auto;
     padding: 0;
     position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-toggle {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 100;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-md);
+    background: white;
+    border: 1px solid var(--ink-200);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: var(--ink-600);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.2s var(--ease);
+}
+
+.sidebar-toggle:hover {
+    background: var(--gray-100);
+    color: var(--ink-900);
+}
+
+.app:not(.sidebar-closed) .sidebar-toggle {
+    display: none;
+}
+
+.sidebar-header-toggle {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: var(--ink-500);
+    transition: all 0.2s var(--ease);
+    margin-right: -8px;
+}
+
+.sidebar-header-toggle:hover {
+    background: rgba(0,0,0,0.05);
+    color: var(--ink-900);
 }
 
 .page {
