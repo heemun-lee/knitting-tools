@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react';
 import {ToastProvider} from './context/ToastContext';
-import {IconMenu, IconX, IconHome, IconCalculator, IconSplit, IconPattern, IconHeart} from './components/icons';
+import {IconChevronLeft, IconChevronRight, IconYarn, IconHome, IconCalculator, IconSplit, IconPattern, IconHeart} from './components/icons';
 import Dashboard from './pages/Dashboard';
 import StitchCalc from './pages/StitchCalc';
 import ShapeCalc from './pages/ShapeCalc';
@@ -38,17 +38,23 @@ const App = () => {
         <ToastProvider>
             <div className={`app ${isSidebarOpen ? '' : 'sidebar-closed'}`}>
                 <aside className="sidebar">
+                    <button className="sidebar-toggle-handle" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                        {isSidebarOpen ? <IconChevronLeft size={16} stroke={2}/> : <IconChevronRight size={16} stroke={2}/>}
+                    </button>
                     <div className="brand">
-                        <button className="sidebar-header-toggle" onClick={() => setIsSidebarOpen(false)}>
-                            <IconX size={20} stroke={2}/>
-                        </button>
-                        <div>
+                        <div className="brand-mark">
+                            <IconYarn size={22} stroke={1.6}/>
+                        </div>
+                        <div className="brand-text">
                             <div className="brand-name">{t('sidebar.brand_name')}</div>
                             <div className="brand-sub">{t('sidebar.brand_sub')}</div>
                         </div>
                     </div>
 
-                    <div className="nav-section-label">{t('sidebar.main_section')}</div>
+                    <div className="nav-section-label">
+                        <span className="nav-section-title">{t('sidebar.main_section')}</span>
+                        <div className="nav-section-line"></div>
+                    </div>
                     {NAV.filter(n => n.section === 'main').map(n => (
                         <button key={n.id}
                                 className={`nav-item ${route === n.id ? 'active' : ''}`}
@@ -58,7 +64,10 @@ const App = () => {
                         </button>
                     ))}
 
-                    <div className="nav-section-label">{t('sidebar.tools_section')}</div>
+                    <div className="nav-section-label">
+                        <span className="nav-section-title">{t('sidebar.tools_section')}</span>
+                        <div className="nav-section-line"></div>
+                    </div>
                     {NAV.filter(n => n.section === 'tools').map(n => (
                         <button key={n.id}
                                 className={`nav-item ${route === n.id ? 'active' : ''}`}
@@ -68,39 +77,48 @@ const App = () => {
                         </button>
                     ))}
 
-                    <div className="sidebar-footer" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '16px', padding: '16px' }}>
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <span style={{color: 'var(--pink-500)', flexShrink: 0}}>
-                                <IconHeart size={14} stroke={2}/>
-                            </span>
-                            <span>{t('sidebar.footer_msg1')}<br/>{t('sidebar.footer_msg2')}</span>
+                    <div style={{ flex: 1 }}></div>
+
+                    <div className="lang-select-container">
+                        <div className="nav-section-label">
+                            <span className="nav-section-title">{t('sidebar.lang_section', 'Language')}</span>
+                            <div className="nav-section-line"></div>
                         </div>
-                        <div style={{ display: 'flex', gap: '6px', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '6px', padding: '0 12px 16px' }}>
                             {['ko', 'en', 'ja'].map((lang) => (
                                 <button
                                     key={lang}
                                     onClick={() => i18n.changeLanguage(lang)}
                                     style={{
-                                        background: i18n.resolvedLanguage === lang ? 'var(--gray-200)' : 'transparent',
-                                        border: '1px solid var(--gray-300)',
-                                        borderRadius: '4px',
-                                        padding: '4px 6px',
+                                        flex: 1,
+                                        background: i18n.resolvedLanguage === lang ? 'var(--pink-50)' : 'transparent',
+                                        border: i18n.resolvedLanguage === lang ? '1px solid var(--pink-200)' : '1px solid var(--ink-200)',
+                                        borderRadius: 'var(--r-sm)',
+                                        padding: '6px',
                                         cursor: 'pointer',
-                                        color: 'var(--gray-800)',
-                                        fontWeight: i18n.resolvedLanguage === lang ? '600' : '400'
+                                        color: i18n.resolvedLanguage === lang ? 'var(--pink-600)' : 'var(--ink-600)',
+                                        fontWeight: i18n.resolvedLanguage === lang ? '600' : '400',
+                                        fontSize: '11px',
+                                        letterSpacing: '0.05em'
                                     }}
                                 >
-                                    {t(`lang.${lang}`)}
+                                    {lang === 'ja' ? 'JP' : lang.toUpperCase()}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    <div className="sidebar-footer" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '16px', padding: '16px' }}>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <span style={{color: 'var(--pink-500)', flexShrink: 0}}>
+                                <IconHeart size={14} stroke={2}/>
+                            </span>
+                            <span className="footer-text">{t('sidebar.footer_msg1')}<br/>{t('sidebar.footer_msg2')}</span>
                         </div>
                     </div>
                 </aside>
 
                 <main className="main" key={route}>
-                    <button className="sidebar-toggle" onClick={() => setIsSidebarOpen(true)}>
-                        <IconMenu size={20} stroke={2}/>
-                    </button>
                     {page}
                 </main>
             </div>
