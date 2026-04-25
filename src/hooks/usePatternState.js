@@ -24,7 +24,7 @@ export const usePatternState = () => {
 
     const [tool, setTool] = useState('brush');
     const [activeColor, setActiveColor] = useState(0);
-    const [pixelScale, setPixelScale] = useState(8);
+    const pixelScale = 8;
     const [fullscreen, setFullscreen] = useState(false);
 
     const [trackerOn, setTrackerOn] = useState(false);
@@ -130,35 +130,15 @@ export const usePatternState = () => {
         }, 30);
     }, [imgEl, stitchCount, rowCount, colorCount, toast]);
 
-    const fitScale = useCallback(() => {
-        if (!grid) return;
-        const W = grid[0].length, H = grid.length;
-        const maxW = fullscreen ? window.innerWidth - 80 : 720;
-        const maxH = fullscreen ? window.innerHeight - 200 : 460;
-        const sW = maxW / (W * PX_W);
-        const sH = maxH / (H * PX_H);
-        const s = Math.max(2, Math.min(20, Math.floor(Math.min(sW, sH))));
-        setPixelScale(s);
-    }, [grid, fullscreen]);
-
-    useEffect(() => {
-        fitScale();
-    }, [grid, fullscreen, fitScale]);
-
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === 'Escape' && fullscreen) setFullscreen(false);
         };
-        const onResize = () => {
-            if (fullscreen) fitScale();
-        };
         window.addEventListener('keydown', onKey);
-        window.addEventListener('resize', onResize);
         return () => {
             window.removeEventListener('keydown', onKey);
-            window.removeEventListener('resize', onResize);
         };
-    }, [fullscreen, fitScale]);
+    }, [fullscreen]);
 
     const pushHistory = () => {
         setHistory(h => [...h.slice(-29), JSON.stringify({grid, palette})]);
@@ -527,7 +507,7 @@ export const usePatternState = () => {
         busy, setBusy,
         tool, setTool,
         activeColor, setActiveColor,
-        pixelScale, setPixelScale,
+        pixelScale,
         fullscreen, setFullscreen,
         trackerOn, setTrackerOn,
         trackerRow, setTrackerRow,
@@ -551,7 +531,6 @@ export const usePatternState = () => {
         measureDragEnd, setMeasureDragEnd,
         onFile,
         convert,
-        fitScale,
         pushHistory,
         undo, redo,
         getCellFromEvent,

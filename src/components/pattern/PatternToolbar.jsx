@@ -1,7 +1,7 @@
 import {
     IconBrush, IconBucket, IconEyedrop, IconRulerLine, IconSelect,
     IconCopy, IconScissors, IconPaste, IconMove, IconUndo, IconRedo,
-    IconMinus, IconPlus, IconFit, IconMaximize, IconMinimize,
+    IconMaximize, IconMinimize,
     IconCrosshair, IconDownload, IconFileExcel, IconFilePdf, IconTrash
 } from '../icons';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,7 @@ export const PatternToolbar = ({state}) => {
     const {
         tool, setTool, setSelection, selection, copySelection, cutSelection, clipboard, pasteClipboard,
         moveSelectionToFloating, selectedMeasure, deleteSelectedMeasure, undo, history, redo, redoStack,
-        setPixelScale, pixelScale, fitScale, fullscreen, setFullscreen, trackerOn, setTrackerOn,
+        fullscreen, setFullscreen, trackerOn, setTrackerOn,
         grid, palette, canvasRef, toast
     } = state;
 
@@ -85,22 +85,6 @@ export const PatternToolbar = ({state}) => {
             </div>
 
             <div className="toolbar-group">
-                <button className="tool-btn" onClick={() => setPixelScale(s => Math.max(2, s - 1))}>
-                    <IconMinus size={14}/>
-                </button>
-                <span style={{
-                    fontSize: 12,
-                    color: 'var(--ink-500)',
-                    padding: '0 6px',
-                    minWidth: 32,
-                    textAlign: 'center'
-                }}>{pixelScale}×</span>
-                <button className="tool-btn" onClick={() => setPixelScale(s => Math.min(40, s + 1))}>
-                    <IconPlus size={14}/>
-                </button>
-                <button className="tool-btn" onClick={fitScale}>
-                    <IconFit size={14}/> {t('pattern_toolbar.fit')}
-                </button>
                 <button className={`tool-btn ${fullscreen ? 'active' : ''}`} onClick={() => setFullscreen(f => !f)}>
                     {fullscreen ? <IconMinimize size={14}/> : <IconMaximize size={14}/>}
                 </button>
