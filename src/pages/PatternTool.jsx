@@ -4,6 +4,7 @@ import {PatternControls} from '../components/pattern/PatternControls';
 import {PatternToolbar} from '../components/pattern/PatternToolbar';
 import {PatternCanvas} from '../components/pattern/PatternCanvas';
 import {PatternModals} from '../components/pattern/PatternModals';
+import {FullscreenOverlay} from '../components/pattern/FullscreenOverlay';
 import {IconBookmark, IconSave, IconPattern} from '../components/icons';
 
 const PatternTool = () => {
@@ -39,8 +40,9 @@ const PatternTool = () => {
                 <div className={`pattern-canvas-wrap ${state.fullscreen ? 'fullscreen' : ''}`}>
                     {state.grid ? (
                         <>
-                            <PatternToolbar state={state}/>
+                            {!state.fullscreen && <PatternToolbar state={state}/>}
                             <PatternCanvas state={state}/>
+                            {state.fullscreen && <FullscreenOverlay state={state}/>}
                         </>
                     ) : (
                         <div style={{

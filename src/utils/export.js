@@ -1,8 +1,82 @@
-export const exportPNG = (canvasRef, toast) => {
-    if (!canvasRef.current) return;
+import {PX_W, PX_H} from './colors';
+
+const G_LEFT = 32, G_RIGHT = 32, G_TOP = 8, G_BOTTOM = 28;
+
+// Draw the full grid at native resolution into an offscreen canvas.
+// Used by PNG and PDF export so the output is always full-resolution
+// regardless of the current viewport zoom/pan.
+export const drawGridOffscreen = (grid, palette, pixelScale = 8) => {
+    const cw = pixelScale * PX_W;
+    const ch = pixelScale * PX_H;
+    const W = grid[0].length, H = grid.length;
+    const totalW = G_LEFT + W * cw + G_RIGHT;
+    const totalH = G_TOP + H * ch + G_BOTTOM;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = totalW;
+    canvas.height = totalH;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, totalW, totalH);
+
+    for (let r = 0; r < H; r++) {
+        for (let c = 0; c < W; c++) {
+            const p = palette[grid[r][c]];
+            if (!p || p.hidden) continue;
+            ctx.fillStyle = p.hex;
+            ctx.fillRect(G_LEFT + c * cw, G_TOP + r * ch, cw, ch);
+        }
+    }
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= W; i++) {
+        const x = G_LEFT + i * cw + 0.5;
+        ctx.beginPath(); ctx.moveTo(x, G_TOP); ctx.lineTo(x, G_TOP + H * ch); ctx.stroke();
+    }
+    for (let i = 0; i <= H; i++) {
+        const y = G_TOP + i * ch + 0.5;
+        ctx.beginPath(); ctx.moveTo(G_LEFT, y); ctx.lineTo(G_LEFT + W * cw, y); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    for (let i = 0; i <= W; i += 5) {
+        const x = G_LEFT + i * cw + 0.5;
+        ctx.beginPath(); ctx.moveTo(x, G_TOP); ctx.lineTo(x, G_TOP + H * ch); ctx.stroke();
+    }
+    for (let i = 0; i <= H; i += 5) {
+        const y = G_TOP + i * ch + 0.5;
+        ctx.beginPath(); ctx.moveTo(G_LEFT, y); ctx.lineTo(G_LEFT + W * cw, y); ctx.stroke();
+    }
+
+    ctx.fillStyle = 'rgba(31,22,32,0.75)';
+    ctx.font = `${Math.max(9, Math.min(11, Math.floor(ch * 0.7)))}px Pretendard, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 5; i <= W; i += 5) {
+        const colIdx = W - i;
+        ctx.fillText(String(i), G_LEFT + colIdx * cw + cw / 2, G_TOP + H * ch + 6);
+    }
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 1; i <= H; i += 2) {
+        ctx.fillText(String(i), G_LEFT - 6, G_TOP + (H - i) * ch + ch / 2);
+    }
+    ctx.textAlign = 'left';
+    for (let i = 2; i <= H; i += 2) {
+        ctx.fillText(String(i), G_LEFT + W * cw + 6, G_TOP + (H - i) * ch + ch / 2);
+    }
+
+    return canvas;
+};
+
+export const exportPNG = (grid, palette, pixelScale, toast) => {
+    if (!grid) return;
+    const canvas = drawGridOffscreen(grid, palette, pixelScale);
     const link = document.createElement('a');
     link.download = `pattern-${Date.now()}.png`;
-    link.href = canvasRef.current.toDataURL('image/png');
+    link.href = canvas.toDataURL('image/png');
     link.click();
     toast('PNG로 내보냈어요');
 };
@@ -15,7 +89,7 @@ export const exportCSV = (grid, palette, toast) => {
     palette.forEach((p, i) => lines.push(`# ${i + 1},${p.hex},${p.count}코`));
     lines.push('');
     grid.forEach(row => lines.push(row.map(v => v + 1).join(',')));
-    const blob = new Blob(['\uFEFF' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
+    const blob = new Blob(['﻿' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
     const link = document.createElement('a');
     link.download = `pattern-${Date.now()}.csv`;
     link.href = URL.createObjectURL(blob);
@@ -23,10 +97,11 @@ export const exportCSV = (grid, palette, toast) => {
     toast('CSV로 내보냈어요');
 };
 
-export const exportPDF = (grid, palette, canvasRef, toast) => {
+export const exportPDF = (grid, palette, pixelScale, toast) => {
     if (!grid) return;
     const W = grid[0].length, H = grid.length;
-    const dataUrl = canvasRef.current.toDataURL('image/png');
+    const canvas = drawGridOffscreen(grid, palette, pixelScale);
+    const dataUrl = canvas.toDataURL('image/png');
     const w = window.open('', '_blank');
     w.document.write(`
     <!doctype html><html><head><meta charset="utf-8"><title>도안 인쇄</title>

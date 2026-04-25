@@ -892,6 +892,7 @@ input, select, textarea {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    position: relative;
 }
 
 .pattern-canvas-wrap.fullscreen {
@@ -900,9 +901,94 @@ input, select, textarea {
     z-index: 80;
     border-radius: 0;
     border: none;
-    padding: 16px 24px 20px;
+    padding: 0;
     min-height: 0;
     background: var(--white);
+}
+
+/* ── Zoom percentage label ─────────────────────────────────── */
+.zoom-pct {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-700);
+    min-width: 40px;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* ── Fullscreen overlay (sits over canvas, pointer-events: none base) ── */
+.fullscreen-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Floating vertical toolbar — top left */
+.fs-toolbar {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.93);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--r-lg);
+    padding: 8px;
+    box-shadow: 0 4px 20px rgba(31, 22, 32, 0.10);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+}
+
+.fs-toolbar .toolbar-group {
+    gap: 4px;
+}
+
+/* Zoom controls — bottom right */
+.fs-zoom {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.93);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--r-md);
+    padding: 6px 8px;
+    box-shadow: 0 2px 12px rgba(31, 22, 32, 0.08);
+}
+
+/* Palette slide-out panel — right edge */
+.fs-palette-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 280px;
+    background: var(--white);
+    border-left: 1px solid var(--ink-100);
+    z-index: 10;
+    pointer-events: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -4px 0 20px rgba(31, 22, 32, 0.08);
+}
+
+.fs-palette-panel.open {
+    transform: translateX(0);
 }
 
 .pattern-toolbar {
@@ -949,28 +1035,28 @@ input, select, textarea {
 
 .pattern-canvas-area {
     flex: 1;
-    background: linear-gradient(45deg, var(--ink-100) 25%, transparent 25%),
-    linear-gradient(-45deg, var(--ink-100) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--ink-100) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--ink-100) 75%);
-    background-size: 16px 16px;
-    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-    background-color: var(--cream);
     border-radius: var(--r-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: auto;
-    padding: 20px;
+    overflow: hidden;
     position: relative;
+    min-height: 0;
 }
 
 .pattern-canvas {
     display: block;
-    background: white;
-    box-shadow: var(--shadow-sm);
-    image-rendering: pixelated;
     cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    /* Checkerboard background shows around grid content */
+    background-image:
+        linear-gradient(45deg, var(--ink-100) 25%, transparent 25%),
+        linear-gradient(-45deg, var(--ink-100) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, var(--ink-100) 75%),
+        linear-gradient(-45deg, transparent 75%, var(--ink-100) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-color: var(--cream);
 }
 
 .palette-list {

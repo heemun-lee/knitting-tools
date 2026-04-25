@@ -3,6 +3,9 @@ import {useToast} from './useToast';
 import {useLocal} from './useLocal';
 import {kmeans, estimateColors, hex, parseHex, luma, axisLock, PX_W, PX_H} from '../utils/colors';
 
+export const G_LEFT = 32, G_RIGHT = 32, G_TOP = 8, G_BOTTOM = 28;
+const ZOOM_MIN = 0.25, ZOOM_MAX = 4.0;
+
 export const usePatternState = () => {
     const toast = useToast();
     const fileRef = useRef(null);
@@ -52,6 +55,57 @@ export const usePatternState = () => {
     const [drawing, setDrawing] = useState(false);
     const [floatingDrag, setFloatingDrag] = useState(null);
     const [measureDragEnd, setMeasureDragEnd] = useState(null);
+
+    // ── Viewport transform ──────────────────────────────────────────────────
+    const [viewZoom, setViewZoom] = useState(1);
+    const [viewPanX, setViewPanX] = useState(0);
+    const [viewPanY, setViewPanY] = useState(0);
+    const [drawTick, setDrawTick] = useState(0);
+    const [showPalettePanel, setShowPalettePanel] = useState(false);
+
+    // Refs mirror state for use in wheel/gesture handlers (stale-closure safety)
+    const viewZoomRef = useRef(1);
+    const viewPanXRef = useRef(0);
+    const viewPanYRef = useRef(0);
+    const containerSizeRef = useRef({w: 0, h: 0});
+
+    // Gesture tracking refs
+    const activePointers = useRef(new Map());
+    const gestureRef = useRef(null);
+
+    useEffect(() => { viewZoomRef.current = viewZoom; }, [viewZoom]);
+    useEffect(() => { viewPanXRef.current = viewPanX; }, [viewPanX]);
+    useEffect(() => { viewPanYRef.current = viewPanY; }, [viewPanY]);
+
+    useEffect(() => {
+        if (!fullscreen) setShowPalettePanel(false);
+    }, [fullscreen]);
+
+    // Fit grid to container viewport
+    const resetZoom = useCallback(() => {
+        if (!grid) return;
+        const {w, h} = containerSizeRef.current;
+        if (!w || !h) return;
+        const dpr = window.devicePixelRatio || 1;
+        const totalW = G_LEFT + grid[0].length * pixelScale * PX_W + G_RIGHT;
+        const totalH = G_TOP + grid.length * pixelScale * PX_H + G_BOTTOM;
+        const fitZ = Math.min((w * dpr) / totalW, (h * dpr) / totalH) * 0.92;
+        const panX = (w * dpr - totalW * fitZ) / 2;
+        const panY = (h * dpr - totalH * fitZ) / 2;
+        setViewZoom(fitZ); setViewPanX(panX); setViewPanY(panY);
+        viewZoomRef.current = fitZ; viewPanXRef.current = panX; viewPanYRef.current = panY;
+    }, [grid, pixelScale]);
+
+    // Zoom around a canvas-physical-pixel pivot point
+    const zoomAround = useCallback((pivotX, pivotY, newZoom) => {
+        const clampedZ = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+        const z = viewZoomRef.current;
+        const newPanX = pivotX - (pivotX - viewPanXRef.current) * (clampedZ / z);
+        const newPanY = pivotY - (pivotY - viewPanYRef.current) * (clampedZ / z);
+        setViewZoom(clampedZ); setViewPanX(newPanX); setViewPanY(newPanY);
+        viewZoomRef.current = clampedZ; viewPanXRef.current = newPanX; viewPanYRef.current = newPanY;
+    }, []);
+    // ────────────────────────────────────────────────────────────────────────
 
     const onFile = (e) => {
         const f = e.target.files?.[0];
@@ -122,13 +176,14 @@ export const usePatternState = () => {
                 setSelection(null);
                 setFloating(null);
                 toast('도안으로 변환했어요');
+                setTimeout(() => resetZoom(), 100);
             } catch (e) {
                 console.error(e);
                 toast('변환 중 문제가 발생했어요');
             }
             setBusy(false);
         }, 30);
-    }, [imgEl, stitchCount, rowCount, colorCount, toast]);
+    }, [imgEl, stitchCount, rowCount, colorCount, toast, resetZoom]);
 
     useEffect(() => {
         const onKey = (e) => {
@@ -169,11 +224,13 @@ export const usePatternState = () => {
         const rect = canvasRef.current.getBoundingClientRect();
         const scaleX = canvasRef.current.width / rect.width;
         const scaleY = canvasRef.current.height / rect.height;
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
+        const rawX = (e.clientX - rect.left) * scaleX;
+        const rawY = (e.clientY - rect.top) * scaleY;
+        // Invert viewport transform to get logical grid coordinates
+        const x = (rawX - viewPanXRef.current) / viewZoomRef.current;
+        const y = (rawY - viewPanYRef.current) / viewZoomRef.current;
         const cw = pixelScale * PX_W;
         const ch = pixelScale * PX_H;
-        const G_LEFT = 32, G_TOP = 8;
         const col = Math.floor((x - G_LEFT) / cw);
         const row = Math.floor((y - G_TOP) / ch);
         if (col < 0 || row < 0 || !grid || col >= grid[0].length || row >= grid.length) return null;
@@ -378,6 +435,77 @@ export const usePatternState = () => {
         }
     };
 
+    // ── Pointer event routing (mouse + touch + Apple Pencil) ────────────────
+    const handlePinchGesture = () => {
+        const g = gestureRef.current;
+        if (!g || g.type !== 'pinch') return;
+        const pointers = [...activePointers.current.values()];
+        if (pointers.length < 2) return;
+        const [p1, p2] = pointers;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+
+        const newDist = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+        const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, g.initZoom * (newDist / g.initDist)));
+
+        const midX = ((p1.clientX + p2.clientX) / 2 - rect.left) * dpr;
+        const midY = ((p1.clientY + p2.clientY) / 2 - rect.top) * dpr;
+        const initMidX = (g.initMidX - rect.left) * dpr;
+        const initMidY = (g.initMidY - rect.top) * dpr;
+
+        // Grid point under initial pinch center stays at current pinch center
+        const newPanX = midX - (initMidX - g.initPanX) * newZoom / g.initZoom;
+        const newPanY = midY - (initMidY - g.initPanY) * newZoom / g.initZoom;
+
+        setViewZoom(newZoom); setViewPanX(newPanX); setViewPanY(newPanY);
+        viewZoomRef.current = newZoom; viewPanXRef.current = newPanX; viewPanYRef.current = newPanY;
+    };
+
+    const onPointerDown = (e) => {
+        activePointers.current.set(e.pointerId, {clientX: e.clientX, clientY: e.clientY});
+        try { e.target.setPointerCapture(e.pointerId); } catch (_) {}
+
+        if (activePointers.current.size === 1) {
+            onCanvasDown(e);
+        } else if (activePointers.current.size === 2) {
+            // Second finger down: cancel drawing, start pinch
+            setDrawing(false);
+            setFloatingDrag(null);
+            const [p1, p2] = [...activePointers.current.values()];
+            gestureRef.current = {
+                type: 'pinch',
+                initDist: Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY),
+                initMidX: (p1.clientX + p2.clientX) / 2,
+                initMidY: (p1.clientY + p2.clientY) / 2,
+                initZoom: viewZoomRef.current,
+                initPanX: viewPanXRef.current,
+                initPanY: viewPanYRef.current,
+            };
+        }
+    };
+
+    const onPointerMove = (e) => {
+        activePointers.current.set(e.pointerId, {clientX: e.clientX, clientY: e.clientY});
+        if (activePointers.current.size >= 2) {
+            handlePinchGesture();
+        } else if (activePointers.current.size === 1 && !gestureRef.current) {
+            onCanvasMove(e);
+        }
+    };
+
+    const onPointerUp = (e) => {
+        activePointers.current.delete(e.pointerId);
+        if (activePointers.current.size === 0) {
+            onCanvasUp();
+            gestureRef.current = null;
+        } else if (activePointers.current.size < 2) {
+            gestureRef.current = null;
+        }
+    };
+    // ────────────────────────────────────────────────────────────────────────
+
     const deleteSelectedMeasure = () => {
         if (!selectedMeasure) return;
         setMeasurements(ms => ms.filter(m => m.id !== selectedMeasure));
@@ -486,6 +614,7 @@ export const usePatternState = () => {
         setSelectedMeasure(null);
         setShowSaved(false);
         toast(`'${entry.name}' 불러왔어요`);
+        setTimeout(() => resetZoom(), 100);
     };
 
     const deleteSaved = (id) => setSaved(s => s.filter(x => x.id !== id));
@@ -529,6 +658,18 @@ export const usePatternState = () => {
         drawing, setDrawing,
         floatingDrag, setFloatingDrag,
         measureDragEnd, setMeasureDragEnd,
+        // Viewport transform
+        viewZoom, setViewZoom,
+        viewPanX, setViewPanX,
+        viewPanY, setViewPanY,
+        viewZoomRef, viewPanXRef, viewPanYRef,
+        containerSizeRef,
+        drawTick, setDrawTick,
+        resetZoom, zoomAround,
+        showPalettePanel, setShowPalettePanel,
+        // Pointer event handlers
+        onPointerDown, onPointerMove, onPointerUp,
+        // Canvas draw handlers (used internally)
         onFile,
         convert,
         pushHistory,

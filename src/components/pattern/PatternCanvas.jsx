@@ -1,5 +1,6 @@
 import {useEffect} from 'react';
 import {PX_W, PX_H} from '../../utils/colors';
+import {G_LEFT, G_RIGHT, G_TOP, G_BOTTOM} from '../../hooks/usePatternState';
 import { useTranslation } from 'react-i18next';
 import {IconCheck, IconMinus, IconPlus, IconReset} from '../icons';
 
@@ -11,25 +12,76 @@ export const PatternCanvas = ({state}) => {
         measurements, measureDraft, selection, selectDraft, floating,
         selectedMeasure,
         canvasRef, canvasAreaRef,
-        onCanvasDown, onCanvasMove, onCanvasUp,
+        viewZoom, viewPanX, viewPanY,
+        viewZoomRef,
+        drawTick, setDrawTick,
+        containerSizeRef,
+        resetZoom, zoomAround,
+        onPointerDown, onPointerMove, onPointerUp,
         commitFloating, setFloating, undo
     } = state;
 
-    const G_LEFT = 32, G_RIGHT = 32, G_BOTTOM = 28, G_TOP = 8;
-
+    // ── Resize observer: keeps canvas sized to its container ────────────────
     useEffect(() => {
-        if (!grid || !canvasRef.current) return;
+        const area = canvasAreaRef.current;
+        if (!area) return;
+        const ro = new ResizeObserver(() => {
+            setDrawTick(t => t + 1);
+        });
+        ro.observe(area);
+        return () => ro.disconnect();
+    }, [canvasAreaRef, setDrawTick]);
+
+    // ── Wheel zoom (non-passive so we can preventDefault) ───────────────────
+    useEffect(() => {
+        const el = canvasRef.current;
+        if (!el) return;
+        const handleWheel = (e) => {
+            e.preventDefault();
+            const rect = el.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const pivotX = (e.clientX - rect.left) * dpr;
+            const pivotY = (e.clientY - rect.top) * dpr;
+            // e.ctrlKey true = trackpad pinch gesture on macOS
+            const factor = e.deltaY < 0 ? 1.1 : 0.9;
+            zoomAround(pivotX, pivotY, viewZoomRef.current * factor);
+        };
+        el.addEventListener('wheel', handleWheel, {passive: false});
+        return () => el.removeEventListener('wheel', handleWheel);
+    }, [canvasRef, zoomAround, viewZoomRef]);
+
+    // ── Main draw loop ───────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!grid || !canvasRef.current || !canvasAreaRef.current) return;
         const W = grid[0].length, H = grid.length;
         const cw = pixelScale * PX_W;
         const ch = pixelScale * PX_H;
-        const c = canvasRef.current;
         const totalW = W * cw + G_LEFT + G_RIGHT;
         const totalH = H * ch + G_TOP + G_BOTTOM;
-        c.width = totalW;
-        c.height = totalH;
+
+        // Size canvas to fill container
+        const area = canvasAreaRef.current;
+        const dpr = window.devicePixelRatio || 1;
+        const areaW = area.clientWidth, areaH = area.clientHeight;
+        const c = canvasRef.current;
+        c.width = areaW * dpr;
+        c.height = areaH * dpr;
+        c.style.width = areaW + 'px';
+        c.style.height = areaH + 'px';
+        containerSizeRef.current = {w: areaW, h: areaH};
+
         const ctx = c.getContext('2d');
         ctx.imageSmoothingEnabled = false;
 
+        // Clear to transparent (CSS checkerboard shows through)
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        // Apply viewport transform
+        ctx.save();
+        ctx.translate(viewPanX, viewPanY);
+        ctx.scale(viewZoom, viewZoom);
+
+        // White background for grid area only
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, totalW, totalH);
 
@@ -190,7 +242,9 @@ export const PatternCanvas = ({state}) => {
                 r2: floating.r + floating.h - 1, c2: floating.c + floating.w - 1
             }, '#EC6B9C');
         }
-    }, [grid, palette, pixelScale, trackerOn, trackerRow, measurements, measureDraft, selection, selectDraft, floating, selectedMeasure, canvasRef]);
+
+        ctx.restore();
+    }, [grid, palette, pixelScale, trackerOn, trackerRow, measurements, measureDraft, selection, selectDraft, floating, selectedMeasure, viewZoom, viewPanX, viewPanY, drawTick, canvasRef, canvasAreaRef]);
 
     return (
         <>
@@ -239,11 +293,10 @@ export const PatternCanvas = ({state}) => {
                 <canvas
                     ref={canvasRef}
                     className="pattern-canvas"
-                    style={{imageRendering: 'auto', cursor: 'crosshair'}}
-                    onMouseDown={onCanvasDown}
-                    onMouseMove={onCanvasMove}
-                    onMouseUp={onCanvasUp}
-                    onMouseLeave={onCanvasUp}
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerUp}
                 />
             </div>
         </>

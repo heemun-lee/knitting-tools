@@ -1,8 +1,9 @@
 import {
     IconBrush, IconBucket, IconEyedrop, IconRulerLine, IconSelect,
     IconCopy, IconScissors, IconPaste, IconMove, IconUndo, IconRedo,
-    IconMaximize, IconMinimize,
-    IconCrosshair, IconDownload, IconFileExcel, IconFilePdf, IconTrash
+    IconMaximize, IconMinimize, IconFit,
+    IconCrosshair, IconDownload, IconFileExcel, IconFilePdf, IconTrash,
+    IconPlus, IconMinus
 } from '../icons';
 import { useTranslation } from 'react-i18next';
 import {exportPNG, exportCSV, exportPDF} from '../../utils/export';
@@ -13,8 +14,18 @@ export const PatternToolbar = ({state}) => {
         tool, setTool, setSelection, selection, copySelection, cutSelection, clipboard, pasteClipboard,
         moveSelectionToFloating, selectedMeasure, deleteSelectedMeasure, undo, history, redo, redoStack,
         fullscreen, setFullscreen, trackerOn, setTrackerOn,
-        grid, palette, canvasRef, toast
+        grid, palette, pixelScale, toast,
+        viewZoom, viewZoomRef, canvasRef, zoomAround, resetZoom
     } = state;
+
+    const zoomBtn = (factor) => {
+        const el = canvasRef.current;
+        if (!el) return;
+        const dpr = window.devicePixelRatio || 1;
+        const pivotX = (el.clientWidth / 2) * dpr;
+        const pivotY = (el.clientHeight / 2) * dpr;
+        zoomAround(pivotX, pivotY, viewZoomRef.current * factor);
+    };
 
     return (
         <div className="pattern-toolbar">
@@ -85,6 +96,19 @@ export const PatternToolbar = ({state}) => {
             </div>
 
             <div className="toolbar-group">
+                <button className="tool-btn" onClick={() => zoomBtn(0.8)}>
+                    <IconMinus size={14}/>
+                </button>
+                <span className="zoom-pct">{Math.round(viewZoom * 100)}%</span>
+                <button className="tool-btn" onClick={() => zoomBtn(1.25)}>
+                    <IconPlus size={14}/>
+                </button>
+                <button className="tool-btn" onClick={resetZoom} title="화면에 맞추기">
+                    <IconFit size={14}/>
+                </button>
+            </div>
+
+            <div className="toolbar-group">
                 <button className={`tool-btn ${fullscreen ? 'active' : ''}`} onClick={() => setFullscreen(f => !f)}>
                     {fullscreen ? <IconMinimize size={14}/> : <IconMaximize size={14}/>}
                 </button>
@@ -97,13 +121,14 @@ export const PatternToolbar = ({state}) => {
             </div>
 
             <div style={{marginLeft: 'auto', display: 'flex', gap: 6}}>
-                <button className="tool-btn" onClick={() => exportPNG(canvasRef, toast)}><IconDownload size={14}/> PNG
+                <button className="tool-btn" onClick={() => exportPNG(grid, palette, pixelScale, toast)}>
+                    <IconDownload size={14}/> PNG
                 </button>
-                <button className="tool-btn" onClick={() => exportCSV(grid, palette, toast)}><IconFileExcel
-                    size={14}/> CSV
+                <button className="tool-btn" onClick={() => exportCSV(grid, palette, toast)}>
+                    <IconFileExcel size={14}/> CSV
                 </button>
-                <button className="tool-btn" onClick={() => exportPDF(grid, palette, canvasRef, toast)}><IconFilePdf
-                    size={14}/> PDF
+                <button className="tool-btn" onClick={() => exportPDF(grid, palette, pixelScale, toast)}>
+                    <IconFilePdf size={14}/> PDF
                 </button>
             </div>
         </div>
